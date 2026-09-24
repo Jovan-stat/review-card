@@ -1,7 +1,7 @@
 import Head from 'next/head';
 
 const WHATSAPP_NUMBER = '6282229445559';
-const WHATSAPP_MESSAGE = 'Halo, saya tertarik dengan Review Card untuk bisnis saya.';
+const WHATSAPP_MESSAGE = 'Halo, saya tertarik dengan Google Review Card untuk bisnis saya.';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 function GoogleIcon() {

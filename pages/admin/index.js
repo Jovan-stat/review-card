@@ -136,7 +136,7 @@ export default function AdminDashboard() {
           <div style={styles.loginBrandMark}>
             <TapIcon />
           </div>
-          <h1 style={styles.loginBrandTitle}>Review Card</h1>
+          <h1 style={styles.loginBrandTitle}>Vertix-Review-One</h1>
           <p style={styles.loginBrandText}>
             Satu tap, satu scan &mdash; langsung ke ulasan Google bisnis Anda.
             Kelola semua kartu dan tujuan tautannya dari satu tempat.
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
         <div style={styles.dashHeader}>
           <div style={styles.dashBrand}>
             <div style={styles.dashBrandDot} />
-            <span style={styles.dashBrandName}>Review Card</span>
+            <span style={styles.dashBrandName}>Vertix-Review-One</span>
           </div>
           <button onClick={handleLogout} style={styles.logoutBtn}>Keluar</button>
         </div>
