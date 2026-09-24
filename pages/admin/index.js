@@ -667,6 +667,7 @@ export default function AdminDashboard() {
         .btnSmall {
           padding: 5px 10px; font-size: 12px; font-weight: 500; border: 1px solid #DDD6C6; border-radius: 5px;
           background: #fff; color: #3A3A35; cursor: pointer; font-family: inherit;
+          text-decoration: none; display: inline-block; line-height: 1.5;
         }
         .btnSmallPrimary {
           padding: 5px 10px; font-size: 12px; font-weight: 600; border: none; border-radius: 5px;

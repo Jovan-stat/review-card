@@ -123,7 +123,9 @@ export default function CardDetailPage() {
       </Head>
 
       <div className="shell">
-        <Link href="/admin" className="backLink">&larr; Kembali ke dashboard</Link>
+        <Link href="/admin" className="backLink">
+          <span className="backArrow">&larr;</span> Kembali ke dashboard
+        </Link>
 
         {loading && <p className="mutedText">Memuat&hellip;</p>}
         {error && <p className="errorText">{error}</p>}
@@ -131,7 +133,7 @@ export default function CardDetailPage() {
         {card && (
           <>
             <div className="header">
-              <div>
+              <div className="headerMain">
                 <code className="codeChip">{card.code}</code>
                 <h1 className="title">{card.business_name || 'Belum ada nama bisnis'}</h1>
               </div>
@@ -226,16 +228,26 @@ export default function CardDetailPage() {
           color: #1A1A18;
         }
         .shell { max-width: 800px; margin: 0 auto; padding: 24px 20px 64px; }
-        .backLink { font-size: 13px; color: #6B6B64; text-decoration: none; display: inline-block; margin-bottom: 20px; }
-
-        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .codeChip {
-          background: #F2EEE2; padding: 3px 8px; border-radius: 4px; font-size: 13px;
-          font-family: ui-monospace, Menlo, monospace; display: inline-block; margin-bottom: 8px;
+        .backLink {
+          font-size: 13px; color: #6B6B64; text-decoration: none; display: inline-flex;
+          align-items: center; gap: 6px; margin-bottom: 28px; font-weight: 500;
         }
-        .title { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+        .backLink:hover { color: #12211D; }
+        .backArrow { font-size: 15px; }
+
+        .header {
+          display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+          margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #EDE7D8;
+        }
+        .headerMain { display: flex; flex-direction: column; gap: 8px; }
+        .codeChip {
+          background: #F2EEE2; padding: 4px 10px; border-radius: 4px; font-size: 12px;
+          font-family: ui-monospace, Menlo, monospace; display: inline-block; width: fit-content;
+        }
+        .title { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; margin: 0; line-height: 1.25; }
         .badgeActive, .badgeInactive {
-          display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; flex-shrink: 0;
+          display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+          flex-shrink: 0; margin-top: 2px;
         }
         .badgeActive { background: #E4F0EB; color: #0F6B5C; }
         .badgeInactive { background: #F2EEE2; color: #8A8A80; }
