@@ -17,6 +17,17 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('');
   const [genModalOpen, setGenModalOpen] = useState(false);
   const [genCount, setGenCount] = useState(5);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Deteksi ukuran layar, biar cuma 1 versi (tabel ATAU list mobile) yang di-render
+  useEffect(() => {
+    function checkSize() {
+      setIsMobile(window.innerWidth <= 760);
+    }
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
 
   // Cek apakah key udah tersimpan dari sesi sebelumnya
   useEffect(() => {
@@ -324,7 +335,8 @@ export default function AdminDashboard() {
         )}
 
         {/* ---- Desktop table ---- */}
-        <div className="tableCard desktopOnly">
+        {!isMobile && (
+        <div className="tableCard">
           <table className="table">
             <thead>
               <tr>
@@ -408,9 +420,11 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* ---- Mobile card list ---- */}
-        <div className="mobileOnly cardList">
+        {isMobile && (
+        <div className="cardList">
           {filteredCards.map((card) => (
             <div className="mobileCard" key={card.id}>
               <div className="mobileCardTop">
@@ -483,6 +497,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* ---- QR Modal ---- */}
@@ -660,9 +675,6 @@ export default function AdminDashboard() {
         }
         .errorText { color: #B3413B; font-size: 14px; margin-bottom: 12px; }
 
-        .desktopOnly { display: block; }
-        .mobileOnly { display: none; }
-
         .modalOverlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(18,33,29,0.55);
           display: flex; justify-content: center; align-items: center; padding: 20px; z-index: 100;
@@ -714,9 +726,6 @@ export default function AdminDashboard() {
           .toolbar { flex-wrap: wrap; }
           .btnGenerate { width: 100%; }
           .searchBox { flex: 1 1 100%; }
-
-          .desktopOnly { display: none; }
-          .mobileOnly { display: flex; }
         }
       `}</style>
     </div>
