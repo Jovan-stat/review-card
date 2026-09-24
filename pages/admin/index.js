@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 
 // Ganti ini sesuai domain lo nanti pas udah deploy (atau tetap localhost buat testing)
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://review-card-beta.vercel.app/';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://review-card-beta.vercel.app';
 
 export default function AdminDashboard() {
   const [adminKey, setAdminKey] = useState('');
