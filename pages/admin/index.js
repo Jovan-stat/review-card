@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import QRCode from 'qrcode';
 
 // Ganti ini sesuai domain lo nanti pas udah deploy (atau tetap localhost buat testing)
@@ -403,6 +404,7 @@ export default function AdminDashboard() {
                       <div className="actionRow">
                         <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
                         <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
+                        <Link href={`/admin/cards/${card.id}`} className="btnSmall">Detail</Link>
                         <button onClick={() => toggleActive(card)} className="btnSmall">
                           {card.is_active ? 'Matikan' : 'Aktifkan'}
                         </button>
@@ -482,6 +484,7 @@ export default function AdminDashboard() {
                   <>
                     <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
                     <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
+                    <Link href={`/admin/cards/${card.id}`} className="btnSmall">Detail</Link>
                     <button onClick={() => toggleActive(card)} className="btnSmall">
                       {card.is_active ? 'Matikan' : 'Aktifkan'}
                     </button>
