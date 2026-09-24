@@ -169,7 +169,7 @@ export default function AdminDashboard() {
         {fontLinks}
         <div className="loginPanel">
           <div className="loginBrandMark"><TapIcon /></div>
-          <h1 className="loginBrandTitle">Vertix-Review-One</h1>
+          <h1 className="loginBrandTitle">Review Card</h1>
           <p className="loginBrandText">
             Satu tap, satu scan &mdash; langsung ke ulasan Google bisnis Anda.
             Kelola semua kartu dan tujuan tautannya dari satu tempat.
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
         <div className="dashHeader">
           <div className="dashBrand">
             <div className="dashBrandDot" />
-            <span className="dashBrandName">Vertix-Review-One</span>
+            <span className="dashBrandName">Review Card</span>
           </div>
           <button onClick={handleLogout} className="logoutBtn">Keluar</button>
         </div>
@@ -404,7 +404,11 @@ export default function AdminDashboard() {
                       <div className="actionRow">
                         <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
                         <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
-                        <Link href={`/admin/cards/${card.id}`} className="btnSmall">Detail</Link>
+                        <Link href={`/admin/cards/${card.id}`}>
+                          <button type="button" className="btnSmall">
+                            Detail
+                          </button>
+                        </Link>
                         <button onClick={() => toggleActive(card)} className="btnSmall">
                           {card.is_active ? 'Matikan' : 'Aktifkan'}
                         </button>
@@ -484,7 +488,11 @@ export default function AdminDashboard() {
                   <>
                     <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
                     <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
-                    <Link href={`/admin/cards/${card.id}`} className="btnSmall">Detail</Link>
+                    <Link href={`/admin/cards/${card.id}`}>
+                      <button type="button" className="btnSmall">
+                        Detail
+                      </button>
+                    </Link>
                     <button onClick={() => toggleActive(card)} className="btnSmall">
                       {card.is_active ? 'Matikan' : 'Aktifkan'}
                     </button>
@@ -568,7 +576,26 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <style jsx global>{`* { box-sizing: border-box; } html, body { margin: 0; padding: 0; }`}</style>
+      <style jsx global>{`
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        a.btnSmall {
+          text-decoration: none !important;
+          color: #3A3A35 !important;
+        }
+        a.btnPrimary, a.btnSmallPrimary {
+          text-decoration: none !important;
+          color: #fff !important;
+        }
+        a.btnSecondary {
+          text-decoration: none !important;
+          color: #6B6B64 !important;
+        }
+        a.btnSmallDanger {
+          text-decoration: none !important;
+          color: #B3413B !important;
+        }
+      `}</style>
       <style jsx>{`
         .dashPage {
           font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;

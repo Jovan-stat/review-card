@@ -123,9 +123,13 @@ export default function CardDetailPage() {
       </Head>
 
       <div className="shell">
-        <Link href="/admin" className="backLink">
-          <span className="backArrow">&larr;</span> Kembali ke dashboard
-        </Link>
+        {/* Wrapper Tombol Kembali */}
+        <div className="backButtonContainer">
+          <Link href="/admin" className="backButton">
+            <span className="backArrow">&larr;</span>
+            <span>Kembali ke dashboard</span>
+          </Link>
+        </div>
 
         {loading && <p className="mutedText">Memuat&hellip;</p>}
         {error && <p className="errorText">{error}</p>}
@@ -228,12 +232,36 @@ export default function CardDetailPage() {
           color: #1A1A18;
         }
         .shell { max-width: 800px; margin: 0 auto; padding: 24px 20px 64px; }
-        .backLink {
-          font-size: 13px; color: #6B6B64; text-decoration: none; display: inline-flex;
-          align-items: center; gap: 6px; margin-bottom: 28px; font-weight: 500;
+
+        /* Styling Tombol Kembali yang Baru */
+        .backButtonContainer {
+          margin-bottom: 28px;
         }
-        .backLink:hover { color: #12211D; }
-        .backArrow { font-size: 15px; }
+        .backButton {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          background: #FFFFFF;
+          border: 1px solid #EDE7D8;
+          border-radius: 8px;
+          color: #3A3A35;
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.15s ease-in-out;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        .backButton:hover {
+          background: #F5EFE0;
+          border-color: #DCD3BF;
+          color: #12211D;
+          transform: translateX(-2px);
+        }
+        .backArrow {
+          font-size: 14px;
+          line-height: 1;
+        }
 
         .header {
           display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
