@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import QRCode from 'qrcode';
 
 // Ganti ini sesuai domain lo nanti pas udah deploy (atau tetap localhost buat testing)
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://vertix-review-one.vercel.app';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://vertix-review-one.vercel.app';
 
 export default function AdminDashboard() {
   const [adminKey, setAdminKey] = useState('');
@@ -11,9 +11,11 @@ export default function AdminDashboard() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [qrModal, setQrModal] = useState(null); // { code, dataUrl }
+  const [qrModal, setQrModal] = useState(null); // { code, dataUrl, url }
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ business_name: '', destination_url: '' });
+  const [search, setSearch] = useState('');
+  const [genModalOpen, setGenModalOpen] = useState(false);
   const [genCount, setGenCount] = useState(5);
 
   // Cek apakah key udah tersimpan dari sesi sebelumnya
@@ -37,7 +39,7 @@ export default function AdminDashboard() {
         headers: { 'x-admin-key': adminKey },
       });
       if (res.status === 401) {
-        setError('Admin key salah.');
+        setError('Kunci admin salah.');
         setLoggedIn(false);
         localStorage.removeItem('admin_key');
         return;
@@ -70,8 +72,13 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
       body: JSON.stringify({ count: Number(genCount) }),
     });
-    if (res.ok) fetchCards();
-    else setError('Gagal generate kartu.');
+    if (res.ok) {
+      setGenModalOpen(false);
+      setGenCount(5);
+      fetchCards();
+    } else {
+      setError('Gagal generate kartu.');
+    }
     setLoading(false);
   }
 
@@ -123,48 +130,133 @@ export default function AdminDashboard() {
     setQrModal({ code, dataUrl, url });
   }
 
+  // Filter kartu berdasarkan kode atau nama bisnis
+  const filteredCards = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return cards;
+    return cards.filter((c) => {
+      const code = (c.code || '').toLowerCase();
+      const biz = (c.business_name || '').toLowerCase();
+      return code.includes(q) || biz.includes(q);
+    });
+  }, [cards, search]);
+
+  const fontLinks = (
+    <Head>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    </Head>
+  );
+
   // ---------- LOGIN SCREEN ----------
   if (!loggedIn) {
     return (
-      <div style={styles.loginPage}>
-        <Head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-          <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-        </Head>
-        <div style={styles.loginPanel}>
-          <div style={styles.loginBrandMark}>
-            <TapIcon />
-          </div>
-          <h1 style={styles.loginBrandTitle}>Vertix-Review-One</h1>
-          <p style={styles.loginBrandText}>
+      <div className="loginPage">
+        {fontLinks}
+        <div className="loginPanel">
+          <div className="loginBrandMark"><TapIcon /></div>
+          <h1 className="loginBrandTitle">Vertix-Review-One</h1>
+          <p className="loginBrandText">
             Satu tap, satu scan &mdash; langsung ke ulasan Google bisnis Anda.
             Kelola semua kartu dan tujuan tautannya dari satu tempat.
           </p>
         </div>
 
-        <div style={styles.loginFormSide}>
-          <form onSubmit={handleLogin} style={styles.loginForm}>
-            <span style={styles.loginEyebrow}>Panel admin</span>
-            <h2 style={styles.loginHeading}>Masuk ke dashboard</h2>
-            <p style={styles.loginSubtext}>Masukkan kunci admin untuk melanjutkan.</p>
+        <div className="loginFormSide">
+          <form onSubmit={handleLogin} className="loginForm">
+            <span className="loginEyebrow">Panel admin</span>
+            <h2 className="loginHeading">Masuk ke dashboard</h2>
+            <p className="loginSubtext">Masukkan kunci admin untuk melanjutkan.</p>
 
-            <label style={styles.loginLabel} htmlFor="admin-key-input">Kunci admin</label>
+            <label className="loginLabel" htmlFor="admin-key-input">Kunci admin</label>
             <input
               id="admin-key-input"
               type="password"
               placeholder="Masukkan kunci admin"
               value={adminKey}
               onChange={(e) => setAdminKey(e.target.value)}
-              style={styles.loginInput}
+              className="loginInput"
               autoFocus
             />
 
-            <button type="submit" style={styles.loginBtn}>Masuk</button>
+            <button type="submit" className="loginBtn">Masuk</button>
 
-            {error && <p style={styles.loginError}>{error}</p>}
+            {error && <p className="loginError">{error}</p>}
           </form>
         </div>
+
+        <style jsx global>{`* { box-sizing: border-box; } html, body { margin: 0; padding: 0; }`}</style>
+        <style jsx>{`
+          .loginPage {
+            display: flex;
+            min-height: 100vh;
+            font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+            background: #FBF8F2;
+          }
+          .loginPanel {
+            flex: 1 1 40%;
+            background: #12211D;
+            color: #F4EFE4;
+            padding: 64px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+          }
+          .loginBrandMark { margin-bottom: 4px; }
+          .loginBrandTitle { font-size: 32px; font-weight: 600; margin: 0; letter-spacing: -0.02em; }
+          .loginBrandText { font-size: 15px; line-height: 1.6; color: #C9CFC9; max-width: 320px; margin: 0; }
+          .loginFormSide {
+            flex: 1 1 60%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+          }
+          .loginForm { width: 100%; max-width: 340px; display: flex; flex-direction: column; }
+          .loginEyebrow { font-size: 13px; color: #0F6B5C; font-weight: 600; margin-bottom: 8px; }
+          .loginHeading { font-size: 26px; font-weight: 600; color: #1A1A18; margin: 0 0 6px 0; letter-spacing: -0.01em; }
+          .loginSubtext { font-size: 14px; color: #6B6B64; margin: 0 0 28px 0; }
+          .loginLabel { font-size: 13px; color: #3A3A35; font-weight: 500; margin-bottom: 6px; }
+          .loginInput {
+            padding: 12px 14px;
+            font-size: 16px;
+            border: 1px solid #DDD6C6;
+            border-radius: 6px;
+            background: #fff;
+            margin-bottom: 20px;
+            outline: none;
+            font-family: inherit;
+            width: 100%;
+          }
+          .loginBtn {
+            padding: 13px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #0F6B5C;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+          }
+          .loginError { color: #B3413B; font-size: 13px; margin-top: 14px; }
+
+          @media (max-width: 760px) {
+            .loginPage { flex-direction: column; }
+            .loginPanel {
+              flex: 0 0 auto;
+              padding: 36px 24px 28px;
+              gap: 10px;
+            }
+            .loginBrandTitle { font-size: 24px; }
+            .loginBrandText { font-size: 14px; max-width: 100%; }
+            .loginFormSide { flex: 1 1 auto; padding: 28px 20px 40px; }
+            .loginForm { max-width: 100%; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -175,90 +267,93 @@ export default function AdminDashboard() {
   const unassignedCards = cards.filter((c) => !c.destination_url).length;
 
   return (
-    <div style={styles.dashPage}>
-      <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-      </Head>
+    <div className="dashPage">
+      {fontLinks}
 
-      <div style={styles.dashShell}>
-        <div style={styles.dashHeader}>
-          <div style={styles.dashBrand}>
-            <div style={styles.dashBrandDot} />
-            <span style={styles.dashBrandName}>Vertix-Review-One</span>
+      <div className="dashShell">
+        <div className="dashHeader">
+          <div className="dashBrand">
+            <div className="dashBrandDot" />
+            <span className="dashBrandName">Vertix-Review-One</span>
           </div>
-          <button onClick={handleLogout} style={styles.logoutBtn}>Keluar</button>
+          <button onClick={handleLogout} className="logoutBtn">Keluar</button>
         </div>
 
-        <div style={styles.summaryRow}>
-          <div style={styles.summaryCard}>
-            <span style={styles.summaryValue}>{totalCards}</span>
-            <span style={styles.summaryLabel}>Total kartu</span>
+        <div className="summaryRow">
+          <div className="summaryCard">
+            <span className="summaryValue">{totalCards}</span>
+            <span className="summaryLabel">Total kartu</span>
           </div>
-          <div style={styles.summaryCard}>
-            <span style={styles.summaryValue}>{activeCards}</span>
-            <span style={styles.summaryLabel}>Aktif</span>
+          <div className="summaryCard">
+            <span className="summaryValue">{activeCards}</span>
+            <span className="summaryLabel">Aktif</span>
           </div>
-          <div style={styles.summaryCard}>
-            <span style={styles.summaryValue}>{unassignedCards}</span>
-            <span style={styles.summaryLabel}>Belum di-assign</span>
+          <div className="summaryCard">
+            <span className="summaryValue">{unassignedCards}</span>
+            <span className="summaryLabel">Belum di-assign</span>
           </div>
         </div>
 
-        <div style={styles.genBox}>
-          <div>
-            <div style={styles.genLabel}>Cetak kartu baru</div>
-            <div style={styles.genHint}>Kartu dibuat kosong, tautan diisi belakangan.</div>
-          </div>
-          <div style={styles.genControls}>
+        <div className="toolbar">
+          <div className="searchBox">
+            <SearchIcon />
             <input
-              type="number"
-              min="1"
-              max="100"
-              value={genCount}
-              onChange={(e) => setGenCount(e.target.value)}
-              style={styles.genInput}
+              type="text"
+              placeholder="Cari kode atau nama bisnis..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="searchInput"
             />
-            <button onClick={handleGenerate} disabled={loading} style={styles.btnPrimary}>
-              Generate {genCount} kartu
-            </button>
+            {search && (
+              <button className="searchClear" onClick={() => setSearch('')} aria-label="Bersihkan pencarian">
+                &times;
+              </button>
+            )}
           </div>
+          <button onClick={() => setGenModalOpen(true)} className="btnPrimary btnGenerate">
+            + Generate Kartu
+          </button>
         </div>
 
-        {error && <p style={styles.errorText}>{error}</p>}
-        {loading && <p style={styles.mutedText}>Memuat&hellip;</p>}
+        {error && <p className="errorText">{error}</p>}
+        {loading && <p className="mutedText">Memuat&hellip;</p>}
+        {!loading && search && (
+          <p className="mutedText resultCount">
+            {filteredCards.length} hasil untuk &ldquo;{search}&rdquo;
+          </p>
+        )}
 
-        <div style={styles.tableCard}>
-          <table style={styles.table}>
+        {/* ---- Desktop table ---- */}
+        <div className="tableCard desktopOnly">
+          <table className="table">
             <thead>
               <tr>
-                <th style={styles.th}>Kode</th>
-                <th style={styles.th}>Nama bisnis</th>
-                <th style={styles.th}>Tautan tujuan</th>
-                <th style={styles.th}>Scan</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Aksi</th>
+                <th className="th">Kode</th>
+                <th className="th">Nama bisnis</th>
+                <th className="th">Tautan tujuan</th>
+                <th className="th">Scan</th>
+                <th className="th">Status</th>
+                <th className="th">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {cards.map((card) => (
-                <tr key={card.id} style={styles.tr}>
-                  <td style={styles.td}><code style={styles.codeChip}>{card.code}</code></td>
+              {filteredCards.map((card) => (
+                <tr key={card.id} className="tr">
+                  <td className="td"><code className="codeChip">{card.code}</code></td>
 
                   {editingId === card.id ? (
                     <>
-                      <td style={styles.td}>
+                      <td className="td">
                         <input
-                          style={styles.inlineInput}
+                          className="inlineInput"
                           value={editForm.business_name}
                           onChange={(e) => setEditForm({ ...editForm, business_name: e.target.value })}
                           placeholder="Nama bisnis klien"
                         />
                       </td>
-                      <td style={styles.td}>
+                      <td className="td">
                         <input
-                          style={styles.inlineInput}
+                          className="inlineInput"
                           value={editForm.destination_url}
                           onChange={(e) => setEditForm({ ...editForm, destination_url: e.target.value })}
                           placeholder="https://search.google.com/local/writereview?placeid=..."
@@ -267,70 +362,363 @@ export default function AdminDashboard() {
                     </>
                   ) : (
                     <>
-                      <td style={styles.td}>
-                        {card.business_name || <span style={styles.mutedText}>&mdash;</span>}
-                      </td>
-                      <td style={styles.td}>
+                      <td className="td">{card.business_name || <span className="mutedText">&mdash;</span>}</td>
+                      <td className="td">
                         {card.destination_url ? (
-                          <a href={card.destination_url} target="_blank" rel="noreferrer" style={styles.linkText}>
+                          <a href={card.destination_url} target="_blank" rel="noreferrer" className="linkText">
                             {card.destination_url.replace(/^https?:\/\//, '').slice(0, 36)}&hellip;
                           </a>
                         ) : (
-                          <span style={styles.mutedText}>Belum di-assign</span>
+                          <span className="mutedText">Belum di-assign</span>
                         )}
                       </td>
                     </>
                   )}
 
-                  <td style={styles.td}>{card.scan_logs?.[0]?.count ?? 0}</td>
-                  <td style={styles.td}>
-                    <span style={card.is_active ? styles.badgeActive : styles.badgeInactive}>
+                  <td className="td">{card.scan_logs?.[0]?.count ?? 0}</td>
+                  <td className="td">
+                    <span className={card.is_active ? 'badgeActive' : 'badgeInactive'}>
                       {card.is_active ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </td>
-                  <td style={styles.td}>
+                  <td className="td">
                     {editingId === card.id ? (
-                      <div style={styles.actionRow}>
-                        <button onClick={() => saveEdit(card.id)} style={styles.btnSmallPrimary}>Simpan</button>
-                        <button onClick={() => setEditingId(null)} style={styles.btnSmall}>Batal</button>
+                      <div className="actionRow">
+                        <button onClick={() => saveEdit(card.id)} className="btnSmallPrimary">Simpan</button>
+                        <button onClick={() => setEditingId(null)} className="btnSmall">Batal</button>
                       </div>
                     ) : (
-                      <div style={styles.actionRow}>
-                        <button onClick={() => startEdit(card)} style={styles.btnSmall}>Edit</button>
-                        <button onClick={() => showQr(card.code)} style={styles.btnSmall}>QR</button>
-                        <button onClick={() => toggleActive(card)} style={styles.btnSmall}>
+                      <div className="actionRow">
+                        <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
+                        <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
+                        <button onClick={() => toggleActive(card)} className="btnSmall">
                           {card.is_active ? 'Matikan' : 'Aktifkan'}
                         </button>
-                        <button onClick={() => deleteCard(card.id)} style={styles.btnSmallDanger}>Hapus</button>
+                        <button onClick={() => deleteCard(card.id)} className="btnSmallDanger">Hapus</button>
                       </div>
                     )}
                   </td>
                 </tr>
               ))}
-              {cards.length === 0 && !loading && (
-                <tr><td colSpan={6} style={styles.emptyState}>Belum ada kartu. Generate dulu di atas.</td></tr>
+              {filteredCards.length === 0 && !loading && (
+                <tr><td colSpan={6} className="emptyState">
+                  {search ? 'Tidak ada kartu yang cocok.' : 'Belum ada kartu. Generate dulu di atas.'}
+                </td></tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* ---- Mobile card list ---- */}
+        <div className="mobileOnly cardList">
+          {filteredCards.map((card) => (
+            <div className="mobileCard" key={card.id}>
+              <div className="mobileCardTop">
+                <code className="codeChip">{card.code}</code>
+                <span className={card.is_active ? 'badgeActive' : 'badgeInactive'}>
+                  {card.is_active ? 'Aktif' : 'Nonaktif'}
+                </span>
+              </div>
+
+              {editingId === card.id ? (
+                <div className="mobileEditFields">
+                  <input
+                    className="inlineInput"
+                    value={editForm.business_name}
+                    onChange={(e) => setEditForm({ ...editForm, business_name: e.target.value })}
+                    placeholder="Nama bisnis klien"
+                  />
+                  <input
+                    className="inlineInput"
+                    value={editForm.destination_url}
+                    onChange={(e) => setEditForm({ ...editForm, destination_url: e.target.value })}
+                    placeholder="Tautan Google review"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="mobileCardRow">
+                    <span className="mobileCardLabel">Bisnis</span>
+                    <span>{card.business_name || <span className="mutedText">&mdash;</span>}</span>
+                  </div>
+                  <div className="mobileCardRow">
+                    <span className="mobileCardLabel">Tautan</span>
+                    {card.destination_url ? (
+                      <a href={card.destination_url} target="_blank" rel="noreferrer" className="linkText">
+                        {card.destination_url.replace(/^https?:\/\//, '').slice(0, 28)}&hellip;
+                      </a>
+                    ) : (
+                      <span className="mutedText">Belum di-assign</span>
+                    )}
+                  </div>
+                  <div className="mobileCardRow">
+                    <span className="mobileCardLabel">Scan</span>
+                    <span>{card.scan_logs?.[0]?.count ?? 0}</span>
+                  </div>
+                </>
+              )}
+
+              <div className="actionRow mobileActionRow">
+                {editingId === card.id ? (
+                  <>
+                    <button onClick={() => saveEdit(card.id)} className="btnSmallPrimary">Simpan</button>
+                    <button onClick={() => setEditingId(null)} className="btnSmall">Batal</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(card)} className="btnSmall">Edit</button>
+                    <button onClick={() => showQr(card.code)} className="btnSmall">QR</button>
+                    <button onClick={() => toggleActive(card)} className="btnSmall">
+                      {card.is_active ? 'Matikan' : 'Aktifkan'}
+                    </button>
+                    <button onClick={() => deleteCard(card.id)} className="btnSmallDanger">Hapus</button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+          {filteredCards.length === 0 && !loading && (
+            <div className="emptyState">
+              {search ? 'Tidak ada kartu yang cocok.' : 'Belum ada kartu. Generate dulu di atas.'}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* ---- QR Modal ---- */}
       {qrModal && (
-        <div style={styles.modalOverlay} onClick={() => setQrModal(null)}>
-          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            <span style={styles.modalEyebrow}>Kode {qrModal.code}</span>
-            <h3 style={styles.modalTitle}>QR untuk kartu ini</h3>
-            <img src={qrModal.dataUrl} alt="QR Code" style={styles.modalQr} />
-            <p style={styles.modalUrl}>{qrModal.url}</p>
-            <div style={styles.modalActions}>
-              <a href={qrModal.dataUrl} download={`qr-${qrModal.code}.png`} style={styles.btnPrimary}>
-                Unduh PNG
-              </a>
-              <button onClick={() => setQrModal(null)} style={styles.btnSecondary}>Tutup</button>
+        <div className="modalOverlay" onClick={() => setQrModal(null)}>
+          <div className="modalBox" onClick={(e) => e.stopPropagation()}>
+            <span className="modalEyebrow">Kode {qrModal.code}</span>
+            <h3 className="modalTitle">QR untuk kartu ini</h3>
+            <img src={qrModal.dataUrl} alt="QR Code" className="modalQr" />
+            <p className="modalUrl">{qrModal.url}</p>
+            <div className="modalActions">
+              <a href={qrModal.dataUrl} download={`qr-${qrModal.code}.png`} className="btnPrimary">Unduh PNG</a>
+              <button onClick={() => setQrModal(null)} className="btnSecondary">Tutup</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ---- Generate Cards Modal ---- */}
+      {genModalOpen && (
+        <div className="modalOverlay" onClick={() => setGenModalOpen(false)}>
+          <div className="modalBox" onClick={(e) => e.stopPropagation()}>
+            <span className="modalEyebrow">Kartu baru</span>
+            <h3 className="modalTitle">Berapa kartu mau dicetak?</h3>
+            <p className="genModalHint">Kartu dibuat kosong, tautan diisi belakangan.</p>
+
+            <div className="stepper">
+              <button
+                type="button"
+                className="stepperBtn"
+                onClick={() => setGenCount((n) => Math.max(1, Number(n) - 1))}
+                aria-label="Kurangi"
+              >
+                &minus;
+              </button>
+              <input
+                type="number"
+                min="1"
+                max="200"
+                value={genCount}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '') return setGenCount('');
+                  setGenCount(Math.max(1, Math.min(200, Number(v))));
+                }}
+                className="stepperInput"
+              />
+              <button
+                type="button"
+                className="stepperBtn"
+                onClick={() => setGenCount((n) => Math.min(200, Number(n) + 1))}
+                aria-label="Tambah"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="modalActions">
+              <button onClick={handleGenerate} disabled={loading || !genCount} className="btnPrimary">
+                {loading ? 'Memproses...' : `Tambah ${genCount || 0} Kartu`}
+              </button>
+              <button onClick={() => setGenModalOpen(false)} className="btnSecondary">Batal</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`* { box-sizing: border-box; } html, body { margin: 0; padding: 0; }`}</style>
+      <style jsx>{`
+        .dashPage {
+          font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+          background: #FBF8F2;
+          min-height: 100vh;
+          color: #1A1A18;
+        }
+        .dashShell { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+        .dashHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .dashBrand { display: flex; align-items: center; gap: 10px; }
+        .dashBrandDot { width: 12px; height: 12px; border-radius: 50%; background: #0F6B5C; }
+        .dashBrandName { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+        .logoutBtn {
+          padding: 8px 16px; font-size: 13px; font-weight: 500;
+          background: transparent; color: #6B6B64; border: 1px solid #DDD6C6;
+          border-radius: 6px; cursor: pointer; font-family: inherit;
+        }
+
+        .summaryRow { display: flex; gap: 12px; margin-bottom: 20px; }
+        .summaryCard {
+          flex: 1; background: #fff; border: 1px solid #EDE7D8; border-radius: 10px;
+          padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .summaryValue { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+        .summaryLabel { font-size: 13px; color: #6B6B64; }
+
+        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
+        .searchBox {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #fff;
+          border: 1px solid #DDD6C6;
+          border-radius: 8px;
+          padding: 0 12px;
+        }
+        .searchInput {
+          border: none;
+          outline: none;
+          padding: 11px 0;
+          font-size: 14px;
+          font-family: inherit;
+          flex: 1;
+          background: transparent;
+          min-width: 0;
+        }
+        .searchClear {
+          border: none;
+          background: transparent;
+          color: #A6A69C;
+          font-size: 18px;
+          cursor: pointer;
+          line-height: 1;
+          padding: 4px;
+        }
+        .resultCount { margin: -8px 0 12px; }
+
+        .tableCard { background: #fff; border: 1px solid #EDE7D8; border-radius: 10px; overflow: hidden; overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .th {
+          text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600;
+          color: #8A8A80; border-bottom: 1px solid #EDE7D8; background: #FAF7F0; white-space: nowrap;
+        }
+        .td { padding: 12px 16px; border-bottom: 1px solid #F2EEE2; vertical-align: middle; }
+        .codeChip {
+          background: #F2EEE2; padding: 3px 8px; border-radius: 4px; font-size: 13px;
+          font-family: ui-monospace, Menlo, monospace;
+        }
+        .linkText { color: #0F6B5C; text-decoration: none; }
+        .mutedText { color: #A6A69C; font-size: 13px; }
+        .emptyState { padding: 32px 16px; text-align: center; color: #A6A69C; }
+
+        .badgeActive, .badgeInactive {
+          display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+        }
+        .badgeActive { background: #E4F0EB; color: #0F6B5C; }
+        .badgeInactive { background: #F2EEE2; color: #8A8A80; }
+
+        .actionRow { display: flex; gap: 6px; flex-wrap: wrap; }
+        .inlineInput {
+          padding: 7px 10px; font-size: 13px; border: 1px solid #DDD6C6; border-radius: 5px;
+          width: 100%; box-sizing: border-box; font-family: inherit;
+        }
+
+        .btnPrimary {
+          padding: 10px 18px; font-size: 14px; font-weight: 600; background: #0F6B5C; color: #fff;
+          border: none; border-radius: 6px; cursor: pointer; text-decoration: none;
+          display: inline-block; font-family: inherit; text-align: center;
+        }
+        .btnPrimary:disabled { opacity: 0.6; cursor: default; }
+        .btnSecondary {
+          padding: 10px 18px; font-size: 14px; font-weight: 500; background: transparent; color: #6B6B64;
+          border: 1px solid #DDD6C6; border-radius: 6px; cursor: pointer; font-family: inherit;
+        }
+        .btnSmall {
+          padding: 5px 10px; font-size: 12px; font-weight: 500; border: 1px solid #DDD6C6; border-radius: 5px;
+          background: #fff; color: #3A3A35; cursor: pointer; font-family: inherit;
+        }
+        .btnSmallPrimary {
+          padding: 5px 10px; font-size: 12px; font-weight: 600; border: none; border-radius: 5px;
+          background: #0F6B5C; color: #fff; cursor: pointer; font-family: inherit;
+        }
+        .btnSmallDanger {
+          padding: 5px 10px; font-size: 12px; font-weight: 500; border: 1px solid #E3B8B4; border-radius: 5px;
+          background: #fff; color: #B3413B; cursor: pointer; font-family: inherit;
+        }
+        .errorText { color: #B3413B; font-size: 14px; margin-bottom: 12px; }
+
+        .desktopOnly { display: block; }
+        .mobileOnly { display: none; }
+
+        .modalOverlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(18,33,29,0.55);
+          display: flex; justify-content: center; align-items: center; padding: 20px; z-index: 100;
+        }
+        .modalBox {
+          background: #fff; padding: 28px 28px 24px; border-radius: 12px; text-align: center;
+          display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 340px;
+        }
+        .modalEyebrow { font-size: 12px; font-weight: 600; color: #0F6B5C; }
+        .modalTitle { font-size: 18px; font-weight: 600; margin: 0 0 4px 0; }
+        .modalQr { width: 100%; max-width: 260px; margin: 0 auto; border-radius: 6px; }
+        .modalUrl { word-break: break-all; font-size: 12px; color: #8A8A80; margin: 8px 0 4px; }
+        .modalActions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+        .modalActions > * { flex: 1; min-width: 120px; }
+
+        .genModalHint { font-size: 13px; color: #6B6B64; margin: 0 0 16px 0; }
+        .stepper { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
+        .stepperBtn {
+          width: 40px; height: 40px; border-radius: 8px; border: 1px solid #DDD6C6; background: #FAF7F0;
+          font-size: 18px; font-weight: 600; color: #12211D; cursor: pointer; font-family: inherit;
+        }
+        .stepperInput {
+          width: 72px; text-align: center; font-size: 20px; font-weight: 700; padding: 8px 4px;
+          border: 1px solid #DDD6C6; border-radius: 8px; font-family: inherit;
+          -moz-appearance: textfield;
+        }
+        .stepperInput::-webkit-outer-spin-button,
+        .stepperInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* ---- Mobile card list ---- */
+        .cardList { display: flex; flex-direction: column; gap: 12px; }
+        .mobileCard {
+          background: #fff; border: 1px solid #EDE7D8; border-radius: 10px; padding: 14px 16px;
+          display: flex; flex-direction: column; gap: 8px;
+        }
+        .mobileCardTop { display: flex; justify-content: space-between; align-items: center; }
+        .mobileCardRow { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+        .mobileCardLabel { color: #8A8A80; flex-shrink: 0; }
+        .mobileEditFields { display: flex; flex-direction: column; gap: 8px; margin: 4px 0; }
+        .mobileActionRow { margin-top: 4px; }
+
+        @media (max-width: 760px) {
+          .dashShell { padding: 20px 16px 48px; }
+          .dashHeader { margin-bottom: 20px; }
+          .summaryRow { gap: 8px; }
+          .summaryCard { padding: 12px 14px; }
+          .summaryValue { font-size: 22px; }
+          .summaryLabel { font-size: 11px; }
+          .toolbar { flex-wrap: wrap; }
+          .btnGenerate { width: 100%; }
+          .searchBox { flex: 1 1 100%; }
+
+          .desktopOnly { display: none; }
+          .mobileOnly { display: flex; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -345,327 +733,11 @@ function TapIcon() {
   );
 }
 
-const FONT_SANS = "'Space Grotesk', 'Segoe UI', system-ui, sans-serif";
-
-const styles = {
-  // ---- Dashboard shell ----
-  dashPage: {
-    fontFamily: FONT_SANS,
-    background: '#FBF8F2',
-    minHeight: '100vh',
-    color: '#1A1A18',
-  },
-  dashShell: {
-    maxWidth: 1080,
-    margin: '0 auto',
-    padding: '32px 24px 64px',
-  },
-  dashHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  dashBrand: { display: 'flex', alignItems: 'center', gap: 10 },
-  dashBrandDot: {
-    width: 12,
-    height: 12,
-    borderRadius: '50%',
-    background: '#0F6B5C',
-  },
-  dashBrandName: { fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' },
-  logoutBtn: {
-    padding: '8px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    background: 'transparent',
-    color: '#6B6B64',
-    border: '1px solid #DDD6C6',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-
-  // ---- Summary cards ----
-  summaryRow: { display: 'flex', gap: 12, marginBottom: 20 },
-  summaryCard: {
-    flex: 1,
-    background: '#fff',
-    border: '1px solid #EDE7D8',
-    borderRadius: 10,
-    padding: '16px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
-  summaryValue: { fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' },
-  summaryLabel: { fontSize: 13, color: '#6B6B64' },
-
-  // ---- Generate box ----
-  genBox: {
-    background: '#12211D',
-    color: '#F4EFE4',
-    borderRadius: 10,
-    padding: '18px 22px',
-    marginBottom: 20,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 16,
-    flexWrap: 'wrap',
-  },
-  genLabel: { fontSize: 15, fontWeight: 600 },
-  genHint: { fontSize: 13, color: '#B9C2BC', marginTop: 2 },
-  genControls: { display: 'flex', gap: 10, alignItems: 'center' },
-  genInput: {
-    width: 64,
-    padding: '10px 10px',
-    fontSize: 14,
-    border: '1px solid #35473F',
-    borderRadius: 6,
-    background: '#1B302A',
-    color: '#F4EFE4',
-    textAlign: 'center',
-    fontFamily: FONT_SANS,
-  },
-
-  // ---- Table ----
-  tableCard: {
-    background: '#fff',
-    border: '1px solid #EDE7D8',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
-  th: {
-    textAlign: 'left',
-    padding: '12px 16px',
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#8A8A80',
-    borderBottom: '1px solid #EDE7D8',
-    background: '#FAF7F0',
-  },
-  tr: {},
-  td: { padding: '12px 16px', borderBottom: '1px solid #F2EEE2', verticalAlign: 'middle' },
-  codeChip: {
-    background: '#F2EEE2',
-    padding: '3px 8px',
-    borderRadius: 4,
-    fontSize: 13,
-    fontFamily: 'ui-monospace, Menlo, monospace',
-  },
-  linkText: { color: '#0F6B5C', textDecoration: 'none' },
-  mutedText: { color: '#A6A69C', fontSize: 13 },
-  emptyState: { padding: '32px 16px', textAlign: 'center', color: '#A6A69C' },
-
-  badgeActive: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 600,
-    background: '#E4F0EB',
-    color: '#0F6B5C',
-  },
-  badgeInactive: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 600,
-    background: '#F2EEE2',
-    color: '#8A8A80',
-  },
-
-  actionRow: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  inlineInput: {
-    padding: '7px 10px',
-    fontSize: 13,
-    border: '1px solid #DDD6C6',
-    borderRadius: 5,
-    width: '100%',
-    boxSizing: 'border-box',
-    fontFamily: FONT_SANS,
-  },
-
-  // ---- Buttons ----
-  btnPrimary: {
-    padding: '10px 18px',
-    fontSize: 14,
-    fontWeight: 600,
-    background: '#0F6B5C',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    textDecoration: 'none',
-    display: 'inline-block',
-    fontFamily: FONT_SANS,
-  },
-  btnSecondary: {
-    padding: '10px 18px',
-    fontSize: 14,
-    fontWeight: 500,
-    background: 'transparent',
-    color: '#6B6B64',
-    border: '1px solid #DDD6C6',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-  btnSmall: {
-    padding: '5px 10px',
-    fontSize: 12,
-    fontWeight: 500,
-    border: '1px solid #DDD6C6',
-    borderRadius: 5,
-    background: '#fff',
-    color: '#3A3A35',
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-  btnSmallPrimary: {
-    padding: '5px 10px',
-    fontSize: 12,
-    fontWeight: 600,
-    border: 'none',
-    borderRadius: 5,
-    background: '#0F6B5C',
-    color: '#fff',
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-  btnSmallDanger: {
-    padding: '5px 10px',
-    fontSize: 12,
-    fontWeight: 500,
-    border: '1px solid #E3B8B4',
-    borderRadius: 5,
-    background: '#fff',
-    color: '#B3413B',
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-  errorText: { color: '#B3413B', fontSize: 14, marginBottom: 12 },
-
-  // ---- QR Modal ----
-  modalOverlay: {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(18,33,29,0.55)',
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
-    padding: 20,
-  },
-  modalBox: {
-    background: '#fff',
-    padding: '28px 28px 24px',
-    borderRadius: 12,
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    width: '100%',
-    maxWidth: 340,
-  },
-  modalEyebrow: { fontSize: 12, fontWeight: 600, color: '#0F6B5C' },
-  modalTitle: { fontSize: 18, fontWeight: 600, margin: '0 0 8px 0' },
-  modalQr: { width: '100%', maxWidth: 260, margin: '0 auto', borderRadius: 6 },
-  modalUrl: { wordBreak: 'break-all', fontSize: 12, color: '#8A8A80', margin: '8px 0 4px' },
-  modalActions: { display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 },
-
-  // ---- Login screen ----
-  loginPage: {
-    display: 'flex',
-    minHeight: '100vh',
-    fontFamily: FONT_SANS,
-    background: '#FBF8F2',
-  },
-  loginPanel: {
-    flex: '1 1 40%',
-    background: '#12211D',
-    color: '#F4EFE4',
-    padding: '64px 48px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    gap: 18,
-  },
-  loginBrandMark: { marginBottom: 4 },
-  loginBrandTitle: {
-    fontSize: 32,
-    fontWeight: 600,
-    margin: 0,
-    letterSpacing: '-0.02em',
-  },
-  loginBrandText: {
-    fontSize: 15,
-    lineHeight: 1.6,
-    color: '#C9CFC9',
-    maxWidth: 320,
-    margin: 0,
-  },
-  loginFormSide: {
-    flex: '1 1 60%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  loginForm: {
-    width: '100%',
-    maxWidth: 340,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  loginEyebrow: {
-    fontSize: 13,
-    color: '#0F6B5C',
-    fontWeight: 600,
-    marginBottom: 8,
-  },
-  loginHeading: {
-    fontSize: 26,
-    fontWeight: 600,
-    color: '#1A1A18',
-    margin: '0 0 6px 0',
-    letterSpacing: '-0.01em',
-  },
-  loginSubtext: {
-    fontSize: 14,
-    color: '#6B6B64',
-    margin: '0 0 28px 0',
-  },
-  loginLabel: {
-    fontSize: 13,
-    color: '#3A3A35',
-    fontWeight: 500,
-    marginBottom: 6,
-  },
-  loginInput: {
-    padding: '12px 14px',
-    fontSize: 15,
-    border: '1px solid #DDD6C6',
-    borderRadius: 6,
-    background: '#fff',
-    marginBottom: 20,
-    outline: 'none',
-    fontFamily: FONT_SANS,
-  },
-  loginBtn: {
-    padding: '12px 16px',
-    fontSize: 15,
-    fontWeight: 600,
-    background: '#0F6B5C',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontFamily: FONT_SANS,
-  },
-  loginError: {
-    color: '#B3413B',
-    fontSize: 13,
-    marginTop: 14,
-  },
-
-};
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="7" cy="7" r="5" stroke="#A6A69C" strokeWidth="1.6" />
+      <path d="M11 11l3.5 3.5" stroke="#A6A69C" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
